@@ -3,19 +3,35 @@ import pandas as pd
 import numpy as np
 import pickle
 import requests
+import gdown
 
-# Load the saved model files
+# Google Drive file download function
+def download_file_from_gdrive(file_url, output_file):
+    gdown.download(file_url, output_file, quiet=False)
+    return output_file
+
+# Download and load resources
 @st.cache_resource
 def load_resources():
-    tfidf_vectorizer = pickle.load(open("tfidf_vectorizer.pkl", "rb"))
-    cosine_sim = np.load("cosine_similarity_matrix.npy")
-    title_to_index = pd.read_csv("title_to_index.csv", index_col=0).squeeze("columns")
-    movie_data = pd.read_csv("movie_data.csv")
+    # Download required files from Google Drive
+    tfidf_vectorizer_file = download_file_from_gdrive('https://drive.google.com/uc?export=download&id=FILE_ID', 'tfidf_vectorizer.pkl')
+    cosine_sim_file = download_file_from_gdrive('https://drive.google.com/uc?export=download&id=FILE_ID', 'cosine_similarity_matrix.npy')
+    title_to_index_file = download_file_from_gdrive('https://drive.google.com/uc?export=download&id=FILE_ID', 'title_to_index.csv')
+    movie_data_file = download_file_from_gdrive('https://drive.google.com/uc?export=download&id=FILE_ID', 'movie_data.csv')
+
+    # Load the files
+    with open(tfidf_vectorizer_file, 'rb') as f:
+        tfidf_vectorizer = pickle.load(f)
+    cosine_sim = np.load(cosine_sim_file)
+    title_to_index = pd.read_csv(title_to_index_file, index_col=0).squeeze("columns")
+    movie_data = pd.read_csv(movie_data_file)
+    
     return tfidf_vectorizer, cosine_sim, title_to_index, movie_data
 
+# Load resources
 tfidf_vectorizer, cosine_sim, title_to_index, movie_data = load_resources()
 
-# Function to fetch movie posters
+# Fetch movie posters
 def fetch_poster(movie_id):
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key=YOUR_TMDB_API_KEY"
     response = requests.get(url)
@@ -25,7 +41,7 @@ def fetch_poster(movie_id):
     except KeyError:
         return None
 
-# Recommend function
+# Movie recommendation function
 def recommend(movie):
     movie = movie.lower()
     if movie not in title_to_index:
@@ -46,36 +62,21 @@ def recommend(movie):
 # Streamlit UI
 st.set_page_config(page_title="Movie Recommender", page_icon="🎬", layout="wide")
 
-# Header with custom styling
+# Custom header styling
 st.markdown("""
     <style>
-    .title {
-        font-size: 40px;
-        font-weight: bold;
-        color: #FF6F61;
-        text-align: center;
-        margin-bottom: 30px;
-    }
-    .subtitle {
-        font-size: 20px;
-        text-align: center;
-        margin-bottom: 30px;
-    }
-    .movie-title {
-        font-size: 18px;
-        color: #FF6F61;
-        font-weight: bold;
-        text-align: center;
-    }
+    .title { font-size: 40px; font-weight: bold; color: #FF6F61; text-align: center; margin-bottom: 30px; }
+    .subtitle { font-size: 20px; text-align: center; margin-bottom: 30px; }
+    .movie-title { font-size: 18px; color: #FF6F61; font-weight: bold; text-align: center; }
     </style>
     <div class="title">🎬 Movie Recommendation System</div>
     <div class="subtitle">Find similar movies based on your favorite!</div>
 """, unsafe_allow_html=True)
 
-# Input field
+# User input
 movie_input = st.text_input("Enter a movie title:", "Avatar")
 
-# Button and recommendation
+# Recommendation button
 if st.button("Get Recommendations"):
     if movie_input.strip() == "":
         st.warning("Please enter a valid movie title.")
@@ -91,18 +92,3 @@ if st.button("Get Recommendations"):
                         st.markdown(f"<p class='movie-title'>{title}</p>", unsafe_allow_html=True)
             else:
                 st.error("Sorry, movie not found in our dataset.")
-import gdown
-import pickle
-
-# Google Drive file URL
-file_url = 'https://drive.google.com/uc?export=download&id=1nqwU56EgKh2NO6H_Sf2Lg9XCAymofbCY'  # Replace FILE_ID with your actual file ID
-
-# Download the cosine similarity matrix
-output_file = 'cosine_similarity_matrix.pkl'
-gdown.download(file_url, output_file, quiet=False)
-
-# Load the cosine similarity matrix (assuming it's pickled)
-with open(output_file, 'rb') as f:
-    cosine_similarity_matrix = pickle.load(f)
-
-# Now you can use the cosine_similarity_matrix in your recommender system
