@@ -7,10 +7,13 @@ import gdown
 
 # Google Drive cosine similarity matrix
 def download_cosine_similarity():
-    file_id = '1nqwU56EgKh2NO6H_Sf2Lg9XCAymofbCY'
+    url = 'https://drive.google.com/uc?export=download&id=1nqwU56EgKh2NO6H_Sf2Lg9XCAymofbCY'
     output_file = 'cosine_similarity_matrix.npy'
-    url = f"https://drive.google.com/uc?id={file_id}"
-    gdown.download(url, output=output_file, quiet=False)
+    downloaded_file = gdown.download(url, output=output_file, quiet=False)
+    
+    if downloaded_file is None:
+        raise RuntimeError("Failed to download cosine similarity matrix. Please check the Google Drive link or ID.")
+    
     return output_file
 
 # GitHub raw file loader
