@@ -29,7 +29,10 @@ def load_resources():
     # Load contents
     with open(tfidf_vectorizer_file, 'rb') as f:
         tfidf_vectorizer = pickle.load(f)
-    cosine_sim = np.load(cosine_sim_file)['cosine_sim']
+    
+    npz_file = np.load(cosine_sim_file, allow_pickle=True)
+    cosine_sim = npz_file['cosine_sim']
+    
     title_to_index = pd.read_csv(title_to_index_file, index_col=0).squeeze("columns")
     movie_data = pd.read_csv(movie_data_file)
     
