@@ -5,21 +5,34 @@ import pickle
 import requests
 import gdown
 
-# Google Drive file download function
-def download_file_from_gdrive(file_url, output_file):
+# Google Drive cosine similarity matrix
+def download_cosine_similarity():
+    file_url = 'https://drive.google.com/uc?export=download&id=1nqwU56EgKh2NO6H_Sf2Lg9XCAymofbCY'
+    output_file = 'cosine_similarity_matrix.npy'
     gdown.download(file_url, output_file, quiet=False)
     return output_file
 
-# Download and load resources
+# GitHub raw file loader
+def download_from_github(url, local_filename):
+    response = requests.get(url)
+    with open(local_filename, 'wb') as f:
+        f.write(response.content)
+    return local_filename
+
+# Load all resources
 @st.cache_resource
 def load_resources():
-    # Download required files from Google Drive
-    tfidf_vectorizer_file = download_file_from_gdrive('https://drive.google.com/uc?export=download&id=FILE_ID', 'tfidf_vectorizer.pkl')
-    cosine_sim_file = download_file_from_gdrive('https://drive.google.com/uc?export=download&id=FILE_ID', 'cosine_similarity_matrix.npy')
-    title_to_index_file = download_file_from_gdrive('https://drive.google.com/uc?export=download&id=FILE_ID', 'title_to_index.csv')
-    movie_data_file = download_file_from_gdrive('https://drive.google.com/uc?export=download&id=FILE_ID', 'movie_data.csv')
+    # GitHub raw file URLs
+    base_url = "https://raw.githubusercontent.com/NavyaNaveen08/movie-recommender/main/"
+    
+    tfidf_vectorizer_file = download_from_github(base_url + 'tfidf_vectorizer.pkl', 'tfidf_vectorizer.pkl')
+    title_to_index_file = download_from_github(base_url + 'title_to_index.csv', 'title_to_index.csv')
+    movie_data_file = download_from_github(base_url + 'movie_data.csv', 'movie_data.csv')
+    
+    # Google Drive cosine similarity matrix
+    cosine_sim_file = download_cosine_similarity()
 
-    # Load the files
+    # Load resources
     with open(tfidf_vectorizer_file, 'rb') as f:
         tfidf_vectorizer = pickle.load(f)
     cosine_sim = np.load(cosine_sim_file)
@@ -28,10 +41,10 @@ def load_resources():
     
     return tfidf_vectorizer, cosine_sim, title_to_index, movie_data
 
-# Load resources
+# Load data
 tfidf_vectorizer, cosine_sim, title_to_index, movie_data = load_resources()
 
-# Fetch movie posters
+# Fetch poster from TMDB
 def fetch_poster(movie_id):
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key=YOUR_TMDB_API_KEY"
     response = requests.get(url)
@@ -41,7 +54,7 @@ def fetch_poster(movie_id):
     except KeyError:
         return None
 
-# Movie recommendation function
+# Recommend movies
 def recommend(movie):
     movie = movie.lower()
     if movie not in title_to_index:
@@ -62,7 +75,6 @@ def recommend(movie):
 # Streamlit UI
 st.set_page_config(page_title="Movie Recommender", page_icon="🎬", layout="wide")
 
-# Custom header styling
 st.markdown("""
     <style>
     .title { font-size: 40px; font-weight: bold; color: #FF6F61; text-align: center; margin-bottom: 30px; }
@@ -73,10 +85,8 @@ st.markdown("""
     <div class="subtitle">Find similar movies based on your favorite!</div>
 """, unsafe_allow_html=True)
 
-# User input
 movie_input = st.text_input("Enter a movie title:", "Avatar")
 
-# Recommendation button
 if st.button("Get Recommendations"):
     if movie_input.strip() == "":
         st.warning("Please enter a valid movie title.")
