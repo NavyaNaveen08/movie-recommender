@@ -9,7 +9,8 @@ import gdown
 def download_cosine_similarity():
     file_id = '1nqwU56EgKh2NO6H_Sf2Lg9XCAymofbCY'
     output_file = 'cosine_similarity_matrix.npy'
-    gdown.download(id=file_id, output=output_file, quiet=False)
+    url = f"https://drive.google.com/uc?id={file_id}"
+    gdown.download(url, output=output_file, quiet=False)
     return output_file
 
 # GitHub raw file loader
