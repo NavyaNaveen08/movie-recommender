@@ -7,9 +7,9 @@ import gdown
 
 # Google Drive cosine similarity matrix
 def download_cosine_similarity():
-    file_url = 'https://drive.google.com/uc?export=download&id=1nqwU56EgKh2NO6H_Sf2Lg9XCAymofbCY'
+    file_id = '1nqwU56EgKh2NO6H_Sf2Lg9XCAymofbCY'
     output_file = 'cosine_similarity_matrix.npy'
-    gdown.download(file_url, output_file, quiet=False)
+    gdown.download(id=file_id, output=output_file, quiet=False)
     return output_file
 
 # GitHub raw file loader
@@ -44,16 +44,12 @@ def load_resources():
 # Load data
 tfidf_vectorizer, cosine_sim, title_to_index, movie_data = load_resources()
 
-# Fetch poster from TMDB
-import requests
-
+# Fetch poster from OMDb API
 def fetch_poster(movie_id):
-    # OMDb API URL with your key
     url = f"http://www.omdbapi.com/?i={movie_id}&apikey=122ba293"
     response = requests.get(url)
     data = response.json()
     
-    # Check if the poster URL is available
     if data.get('Response') == 'True':
         return data.get('Poster', None)
     else:
@@ -72,8 +68,8 @@ def recommend(movie):
     recommended = []
     for i in movie_list:
         movie_title = movie_data.iloc[i[0]].title
-        movie_imdb_id = movie_data.iloc[i[0]].imdb_id  # Make sure 'imdb_id' column exists
-        poster = fetch_poster(movie_imdb_id)  # Fetch poster using IMDb ID
+        movie_imdb_id = movie_data.iloc[i[0]].imdb_id
+        poster = fetch_poster(movie_imdb_id)
         recommended.append((movie_title, poster))
     
     return recommended
