@@ -45,13 +45,18 @@ def load_resources():
 tfidf_vectorizer, cosine_sim, title_to_index, movie_data = load_resources()
 
 # Fetch poster from TMDB
+import requests
+
 def fetch_poster(movie_id):
-    url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key=YOUR_TMDB_API_KEY"
+    # OMDb API URL with your key
+    url = f"http://www.omdbapi.com/?i={movie_id}&apikey=122ba293"
     response = requests.get(url)
     data = response.json()
-    try:
-        return "https://image.tmdb.org/t/p/w500" + data['poster_path']
-    except KeyError:
+    
+    # Check if the poster URL is available
+    if data.get('Response') == 'True':
+        return data.get('Poster', None)
+    else:
         return None
 
 # Recommend movies
@@ -59,6 +64,7 @@ def recommend(movie):
     movie = movie.lower()
     if movie not in title_to_index:
         return []
+    
     index = title_to_index[movie]
     distances = cosine_sim[index]
     movie_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6]
@@ -66,8 +72,8 @@ def recommend(movie):
     recommended = []
     for i in movie_list:
         movie_title = movie_data.iloc[i[0]].title
-        movie_id = movie_data.iloc[i[0]].id
-        poster = fetch_poster(movie_id)
+        movie_imdb_id = movie_data.iloc[i[0]].imdb_id  # Make sure 'imdb_id' column exists
+        poster = fetch_poster(movie_imdb_id)  # Fetch poster using IMDb ID
         recommended.append((movie_title, poster))
     
     return recommended
