@@ -3,52 +3,41 @@ import pandas as pd
 import numpy as np
 import pickle
 import requests
-import gdown
 
-# Google Drive cosine similarity matrix
-def download_cosine_similarity():
-    url = 'https://drive.google.com/uc?export=download&id=1nqwU56EgKh2NO6H_Sf2Lg9XCAymofbCY'
-    output_file = 'cosine_similarity_matrix.npy'
-    downloaded_file = gdown.download(url, output=output_file, quiet=False)
-    
-    if downloaded_file is None:
-        raise RuntimeError("Failed to download cosine similarity matrix. Please check the Google Drive link or ID.")
-    
-    return output_file
-
-# GitHub raw file loader
+# -----------------------
+# Download from GitHub
+# -----------------------
 def download_from_github(url, local_filename):
     response = requests.get(url)
     with open(local_filename, 'wb') as f:
         f.write(response.content)
     return local_filename
 
-# Load all resources
+# -----------------------
+# Load All Resources
+# -----------------------
 @st.cache_resource
 def load_resources():
-    # GitHub raw file URLs
     base_url = "https://raw.githubusercontent.com/NavyaNaveen08/movie-recommender/main/"
     
+    # Files from GitHub
     tfidf_vectorizer_file = download_from_github(base_url + 'tfidf_vectorizer.pkl', 'tfidf_vectorizer.pkl')
     title_to_index_file = download_from_github(base_url + 'title_to_index.csv', 'title_to_index.csv')
     movie_data_file = download_from_github(base_url + 'movie_data.csv', 'movie_data.csv')
-    
-    # Google Drive cosine similarity matrix
-    cosine_sim_file = download_cosine_similarity()
+    cosine_sim_file = download_from_github(base_url + 'cosine_similarity_matrix.npz', 'cosine_similarity_matrix.npz')
 
-    # Load resources
+    # Load contents
     with open(tfidf_vectorizer_file, 'rb') as f:
         tfidf_vectorizer = pickle.load(f)
-    cosine_sim = np.load(cosine_sim_file)
+    cosine_sim = np.load(cosine_sim_file)['cosine_sim']
     title_to_index = pd.read_csv(title_to_index_file, index_col=0).squeeze("columns")
     movie_data = pd.read_csv(movie_data_file)
     
     return tfidf_vectorizer, cosine_sim, title_to_index, movie_data
 
-# Load data
-tfidf_vectorizer, cosine_sim, title_to_index, movie_data = load_resources()
-
-# Fetch poster from OMDb API
+# -----------------------
+# Fetch Poster from OMDb
+# -----------------------
 def fetch_poster(movie_id):
     url = f"http://www.omdbapi.com/?i={movie_id}&apikey=122ba293"
     response = requests.get(url)
@@ -59,7 +48,9 @@ def fetch_poster(movie_id):
     else:
         return None
 
-# Recommend movies
+# -----------------------
+# Recommend Movies
+# -----------------------
 def recommend(movie):
     movie = movie.lower()
     if movie not in title_to_index:
@@ -78,7 +69,10 @@ def recommend(movie):
     
     return recommended
 
+# -----------------------
 # Streamlit UI
+# -----------------------
+tfidf_vectorizer, cosine_sim, title_to_index, movie_data = load_resources()
 st.set_page_config(page_title="Movie Recommender", page_icon="🎬", layout="wide")
 
 st.markdown("""
