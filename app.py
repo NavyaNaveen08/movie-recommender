@@ -21,7 +21,7 @@ st.markdown("""
         .big-title {
             color: #ef4444;
             text-align: center;
-            font-size: 50px;  /* Made title size as large as possible */
+            font-size: 40px; 
             font-weight: bold;
             margin-top: 20px;
             margin-bottom: 30px;
@@ -46,7 +46,7 @@ st.markdown("""
             color: #ffffff;
         }
         .stButton>button {
-            background-color: black;  /* Set color of 'Recommend' button to black */
+            background-color: black;
             color: white;
             border: none;
             border-radius: 8px;
@@ -86,7 +86,7 @@ tfidf_vectorizer, cosine_sim, title_to_index, movie_data = load_resources()
 # OMDb API Key (only for posters and plot descriptions)
 # -------------------------
 
-OMDB_API_KEY = "122ba293"  # <-- Replace with your OMDb API Key
+OMDB_API_KEY = "122ba293" 
 
 @st.cache_data(show_spinner=False)
 def fetch_movie_details(title):
