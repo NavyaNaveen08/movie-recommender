@@ -1,107 +1,52 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
-import requests
+import joblib
 
 # -----------------------
-# Download from GitHub
+# Load resources
 # -----------------------
-def download_from_github(url, local_filename):
-    response = requests.get(url)
-    with open(local_filename, 'wb') as f:
-        f.write(response.content)
-    return local_filename
-
-# -----------------------
-# Load All Resources
-# -----------------------
-@st.cache_resource
+@st.cache_data
 def load_resources():
-    base_url = "https://raw.githubusercontent.com/NavyaNaveen08/movie-recommender/main/"
-    
-    # Files from GitHub
-    tfidf_vectorizer_file = download_from_github(base_url + 'tfidf_vectorizer.pkl', 'tfidf_vectorizer.pkl')
-    title_to_index_file = download_from_github(base_url + 'title_to_index.csv', 'title_to_index.csv')
-    movie_data_file = download_from_github(base_url + 'movie_data.csv', 'movie_data.csv')
-    cosine_sim_file = download_from_github(base_url + 'cosine_similarity_matrix.npz', 'cosine_similarity_matrix.npz')
-
-    # Load contents
-    with open(tfidf_vectorizer_file, 'rb') as f:
-        tfidf_vectorizer = pickle.load(f)
-    
-    npz_file = np.load(cosine_sim_file, allow_pickle=True)
-    cosine_sim = npz_file['cosine_sim']
-    
-    title_to_index = pd.read_csv(title_to_index_file, index_col=0).squeeze("columns")
-    movie_data = pd.read_csv(movie_data_file)
-    
-    return tfidf_vectorizer, cosine_sim, title_to_index, movie_data
+    tfidf_vectorizer = joblib.load("tfidf_vectorizer.joblib")
+    data = pd.read_csv("movies.csv")
+    npz_file = np.load("cosine_similarity_matrix.npz")
+    cosine_sim = npz_file["cosine_sim"]
+    title_to_index = pd.Series(data.index, index=data["title"].str.lower())
+    return tfidf_vectorizer, cosine_sim, title_to_index, data
 
 # -----------------------
-# Fetch Poster from OMDb
+# Recommend movies
 # -----------------------
-def fetch_poster(movie_id):
-    url = f"http://www.omdbapi.com/?i={movie_id}&apikey=122ba293"
-    response = requests.get(url)
-    data = response.json()
-    
-    if data.get('Response') == 'True':
-        return data.get('Poster', None)
-    else:
-        return None
-
-# -----------------------
-# Recommend Movies
-# -----------------------
-def recommend(movie):
-    movie = movie.lower()
-    if movie not in title_to_index:
+def recommend_movies(title, cosine_sim, title_to_index, data, top_n=10):
+    title = title.lower()
+    if title not in title_to_index:
         return []
-    
-    index = title_to_index[movie]
-    distances = cosine_sim[index]
-    movie_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6]
-    
-    recommended = []
-    for i in movie_list:
-        movie_title = movie_data.iloc[i[0]].title
-        movie_imdb_id = movie_data.iloc[i[0]].imdb_id
-        poster = fetch_poster(movie_imdb_id)
-        recommended.append((movie_title, poster))
-    
-    return recommended
+
+    idx = title_to_index[title]
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:top_n+1]
+    movie_indices = [i[0] for i in sim_scores]
+    return data["title"].iloc[movie_indices].tolist()
 
 # -----------------------
 # Streamlit UI
 # -----------------------
-tfidf_vectorizer, cosine_sim, title_to_index, movie_data = load_resources()
-st.set_page_config(page_title="Movie Recommender", page_icon="🎬", layout="wide")
+st.set_page_config(page_title="Movie Recommender", page_icon="🎬", layout="centered")
+st.title("🎬 Movie Recommender System")
+st.markdown("Enter a movie title to get similar recommendations!")
 
-st.markdown("""
-    <style>
-    .title { font-size: 40px; font-weight: bold; color: #FF6F61; text-align: center; margin-bottom: 30px; }
-    .subtitle { font-size: 20px; text-align: center; margin-bottom: 30px; }
-    .movie-title { font-size: 18px; color: #FF6F61; font-weight: bold; text-align: center; }
-    </style>
-    <div class="title">🎬 Movie Recommendation System</div>
-    <div class="subtitle">Find similar movies based on your favorite!</div>
-""", unsafe_allow_html=True)
+# Load data
+tfidf_vectorizer, cosine_sim, title_to_index, data = load_resources()
 
-movie_input = st.text_input("Enter a movie title:", "Avatar")
+# User input
+movie_input = st.text_input("Enter a movie title")
 
-if st.button("Get Recommendations"):
-    if movie_input.strip() == "":
-        st.warning("Please enter a valid movie title.")
+if movie_input:
+    recommendations = recommend_movies(movie_input, cosine_sim, title_to_index, data)
+    if recommendations:
+        st.subheader("Recommended Movies:")
+        for i, rec in enumerate(recommendations, 1):
+            st.write(f"{i}. {rec}")
     else:
-        with st.spinner('Fetching recommendations...'):
-            results = recommend(movie_input)
-            if results:
-                st.success("Here are some recommendations:")
-                cols = st.columns(5)
-                for i, (title, poster) in enumerate(results):
-                    with cols[i % 5]:
-                        st.image(poster, caption=title, use_column_width=True)
-                        st.markdown(f"<p class='movie-title'>{title}</p>", unsafe_allow_html=True)
-            else:
-                st.error("Sorry, movie not found in our dataset.")
+        st.warning("Sorry, that movie was not found. Please check the spelling or try another title.")
