@@ -21,7 +21,7 @@ st.markdown("""
         .big-title {
             color: #ef4444;
             text-align: center;
-            font-size: 50px;
+            font-size: 100px;
             font-weight: bold;
             margin-top: 20px;
             margin-bottom: 30px;
@@ -31,7 +31,7 @@ st.markdown("""
             padding: 10px;
             border-radius: 12px;
             margin-bottom: 15px;
-            color: #000000;
+            color: #ffffff;
         }
         .movie-title {
             font-size: 20px;
@@ -47,7 +47,7 @@ st.markdown("""
         }
         .stButton>button {
             background-color: #ef4444;
-            color: white;
+            color: red;
             border: none;
             border-radius: 8px;
             font-weight: bold;
