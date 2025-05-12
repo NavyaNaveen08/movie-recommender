@@ -86,7 +86,7 @@ tfidf_vectorizer, cosine_sim, title_to_index, movie_data = load_resources()
 # OMDb API Key (only for posters)
 # -------------------------
 
-OMDB_API_KEY = "your_omdb_api_key_here"  # <-- Replace with your OMDb API Key
+OMDB_API_KEY = "122ba293"  # <-- Replace with your OMDb API Key
 
 @st.cache_data(show_spinner=False)
 def fetch_poster(title):
