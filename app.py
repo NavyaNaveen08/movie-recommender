@@ -18,7 +18,7 @@ def load_resources():
     cosine_sim = npz_file["cosine_sim"]
 
     # Load movie dataset
-    movie_data = pd.read_csv("movies.csv")
+    movie_data = pd.read_csv("movie_data.csv")
 
     # Build title to index mapping
     title_to_index = pd.Series(movie_data.index, index=movie_data['title'].str.lower())
