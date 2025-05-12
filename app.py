@@ -9,7 +9,7 @@ import pickle
 import requests
 
 # -------------------------
-# Custom CSS for Red-Black Theme
+# Custom CSS for Red-Black Theme and Heading Size
 # -------------------------
 
 st.markdown("""
@@ -18,12 +18,13 @@ st.markdown("""
             background-color: #0f0f0f;
             color: #ffffff;
         }
-        .title {
+        .big-title {
             color: #ef4444;
             text-align: center;
             font-size: 50px;
             font-weight: bold;
             margin-top: 20px;
+            margin-bottom: 30px;
         }
         .recommendation {
             background-color: #1c1c1c;
@@ -82,20 +83,21 @@ def load_resources():
 tfidf_vectorizer, cosine_sim, title_to_index, movie_data = load_resources()
 
 # -------------------------
-# OMDb API Configuration
+# OMDb API Key (only for posters)
 # -------------------------
 
-OMDB_API_KEY = "122ba293"  # <-- Replace with your OMDb API Key
+OMDB_API_KEY = "your_omdb_api_key_here"  # <-- Replace with your OMDb API Key
 
-def fetch_movie_details(title):
+@st.cache_data(show_spinner=False)
+def fetch_poster(title):
     try:
         url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}"
         response = requests.get(url).json()
         if response.get("Response") == "True":
-            return response.get("Poster"), response.get("Plot")
+            return response.get("Poster")
     except:
         pass
-    return None, "Description not available."
+    return None
 
 # -------------------------
 # Recommend Function
@@ -112,14 +114,15 @@ def recommend_movies(title, num_recommendations=5):
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
     sim_scores = sim_scores[1:num_recommendations+1]
 
-    recommended_titles = [movie_data.iloc[i[0]]['title'] for i in sim_scores]
+    recommended_titles = []
     posters = []
     descriptions = []
 
-    for t in recommended_titles:
-        poster, desc = fetch_movie_details(t)
-        posters.append(poster)
-        descriptions.append(desc)
+    for i in sim_scores:
+        movie_row = movie_data.iloc[i[0]]
+        recommended_titles.append(movie_row['title'])
+        descriptions.append(movie_row.get('tags', 'Description not available.'))
+        posters.append(fetch_poster(movie_row['title']))
 
     return recommended_titles, posters, descriptions
 
@@ -127,13 +130,14 @@ def recommend_movies(title, num_recommendations=5):
 # Streamlit UI
 # -------------------------
 
-st.markdown('<p class="title">🎬 Movie Recommender System</p>', unsafe_allow_html=True)
+st.markdown('<div class="big-title">🎬 Movie Recommender System</div>', unsafe_allow_html=True)
 
 movie_list = movie_data['title'].values
 selected_movie = st.selectbox("Choose a movie to get recommendations:", movie_list)
 
 if st.button("Recommend"):
-    recommendations, posters, descriptions = recommend_movies(selected_movie)
+    with st.spinner("Fetching recommendations..."):
+        recommendations, posters, descriptions = recommend_movies(selected_movie)
 
     if "Movie not found" in recommendations[0]:
         st.error(recommendations[0])
