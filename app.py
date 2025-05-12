@@ -1,6 +1,5 @@
 import streamlit as st
 
-# MUST be the first Streamlit command
 st.set_page_config(page_title="Movie Recommender", page_icon="🎬", layout="centered")
 
 import pandas as pd
@@ -8,8 +7,6 @@ import numpy as np
 import pickle
 import requests
 
-# -------------------------
-# Custom CSS for Red-Black Theme and Largest Title Size
 # -------------------------
 
 st.markdown("""
@@ -63,8 +60,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# -------------------------
-# Load Resources
 # -------------------------
 
 @st.cache_data
