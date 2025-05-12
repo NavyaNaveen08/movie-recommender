@@ -18,19 +18,20 @@ st.markdown("""
             background-color: #0f0f0f;
             color: #ffffff;
         }
-        .title {
+        .big-title {
             color: #ef4444;
             text-align: center;
             font-size: 50px;
             font-weight: bold;
             margin-top: 20px;
+            margin-bottom: 30px;
         }
         .recommendation {
             background-color: #1c1c1c;
             padding: 10px;
             border-radius: 12px;
             margin-bottom: 15px;
-            color: #ffffff;
+            color: #000000;
         }
         .movie-title {
             font-size: 20px;
