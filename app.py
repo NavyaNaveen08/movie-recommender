@@ -46,7 +46,7 @@ st.markdown("""
             color: #ffffff;
         }
         .stButton>button {
-            background-color: #ef4444;
+            background-color: black;  /* Set color of 'Recommend' button to black */
             color: white;
             border: none;
             border-radius: 8px;
@@ -56,19 +56,9 @@ st.markdown("""
         .stButton>button:hover {
             background-color: #b91c1c;
         }
-        .stButton>button:active {
-            background-color: #6a1d1d;
-        }
-        .stButton>button:focus {
-            outline: none;
-        }
         .poster {
             border-radius: 10px;
             box-shadow: 0px 4px 12px rgba(255, 0, 0, 0.3);
-        }
-        .stButton>button {
-            background-color: black;  /* Set color of 'Recommend' button to black */
-            color: white;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -93,21 +83,23 @@ def load_resources():
 tfidf_vectorizer, cosine_sim, title_to_index, movie_data = load_resources()
 
 # -------------------------
-# OMDb API Key (only for posters)
+# OMDb API Key (only for posters and plot descriptions)
 # -------------------------
 
 OMDB_API_KEY = "122ba293"  # <-- Replace with your OMDb API Key
 
 @st.cache_data(show_spinner=False)
-def fetch_poster(title):
+def fetch_movie_details(title):
     try:
         url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}"
         response = requests.get(url).json()
         if response.get("Response") == "True":
-            return response.get("Poster")
+            poster = response.get("Poster")
+            plot = response.get("Plot", "Description not available.")
+            return poster, plot
     except:
         pass
-    return None
+    return None, "Description not available."
 
 # -------------------------
 # Recommend Function
@@ -131,8 +123,9 @@ def recommend_movies(title, num_recommendations=5):
     for i in sim_scores:
         movie_row = movie_data.iloc[i[0]]
         recommended_titles.append(movie_row['title'])
-        descriptions.append(movie_row.get('tags', 'Description not available.'))
-        posters.append(fetch_poster(movie_row['title']))
+        poster, description = fetch_movie_details(movie_row['title'])
+        posters.append(poster)
+        descriptions.append(description)
 
     return recommended_titles, posters, descriptions
 
